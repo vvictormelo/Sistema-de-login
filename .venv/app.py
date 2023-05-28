@@ -13,7 +13,7 @@ class BackEnd():
     def desconectadb(self):
         self.cursor.close()
         self.con.close()
-        print("Banco de dados foi desconcetado")
+        print("Banco de dados foi desconectado")
 
     def criar_tabela(self):
         self.conectadb()
@@ -46,7 +46,7 @@ class BackEnd():
 
             if (self.username_cadastro == "" or self.email_cadastro == "" or self.password_cadastro == "" or self.confirm_cadastro == ""):
                 messagebox.showerror(
-                    title="Sistema de login", message="ERRO!!!\Por favor preencha todos os campos!")
+                    title="Sistema de login", message="Por favor preencha todos os campos!")
 
             elif (len(self.username_cadastro) < 4):
                 messagebox.showwarning(
@@ -58,18 +58,46 @@ class BackEnd():
 
             elif (self.password_cadastro != self.confirm_cadastro):
                 messagebox.showerror(
-                    title="Sistema de login", message="ERRO!!!\nAs senhas não são iguais. Por favor tente novamente!")
+                    title="Sistema de login", message="As senhas não são iguais. Por favor tente novamente!")
 
             else:
                 self.con.commit()
+                self.limpaEntryCadastro()
                 messagebox.showinfo(
                     "Sistema de login", message=f"Parabéns {self.username_cadastro}!\nCadastro realizado com sucesso!")
+                self.desconectadb()
 
         except:
             messagebox.showinfo(
                 "Sistema de login", message=f"Erro no processamento do seu cadastro!\nPor favor tente novamente!")
+            self.desconectadb()
 
-        self.desconectadb()
+    def verify_login(self):
+        self.email_login = self.email_login_entry.get()
+        self.password_login = self.password_login_entry.get()
+
+        self.conectadb()
+
+        self.cursor.execute('''SELECT * FROM usuarios WHERE (login = ? and senha = ?)''',
+                            (self.email_login, self.password_login))
+
+        self.verifica_dados = self.cursor.fetchone()
+
+        try:
+            if (self.email_login == "" or self.password_login == ""):
+                messagebox.showerror(
+                    title="Sistema de Login", message="Preencha todas os campos!")
+
+            elif (self.email_login in self.verifica_dados and self.password_login in self.verifica_dados):
+                messagebox.showinfo(
+                    title="Sistema de Login", message="Seja bem vindo!\nLogin realizado com sucesso!")
+                self.desconectadb()
+                self.limpaEntryLogin()
+
+        except:
+            messagebox.showerror(
+                title="Sistema de Login", message="Credencias não cadastradas no sistema.\nVerifique os dados ou cadastra-se!")
+            self.desconectadb()
 
 
 class App(ctk.CTk, BackEnd):
@@ -105,10 +133,10 @@ class App(ctk.CTk, BackEnd):
             self.frame_login, text="Faça o seu login", font=("Futura Md Bt bold", 22))
         self.lb_title.grid(row=0, column=0, padx=10, pady=10)
 
-        # Input do username do usuário
-        self.username_login_entry = ctk.CTkEntry(
+        # Input do login de acesso do usuário
+        self.email_login_entry = ctk.CTkEntry(
             self.frame_login, width=300, placeholder_text="Login do usuário", font=("Futura Md Bt", 16), corner_radius=20, border_color="white")
-        self.username_login_entry.grid(row=1, column=0, padx=10, pady=10)
+        self.email_login_entry.grid(row=1, column=0, padx=10, pady=10)
 
         # Input da senha do usuário
         self.password_login_entry = ctk.CTkEntry(
@@ -117,12 +145,12 @@ class App(ctk.CTk, BackEnd):
 
         # Checkbox de visualização da senha
         self.checkbox_login_entry = ctk.CTkCheckBox(
-            self.frame_login, text="Mostrar a senha", font=("Futura Md Bt", 12), corner_radius=10, border_color="white")
+            self.frame_login, text="Mostrar a senha", font=("Futura Md Bt", 12), corner_radius=10, border_color="white", command=self.showEntrySenha)
         self.checkbox_login_entry.grid(row=3, column=0, padx=10, pady=10)
 
         # Botão de acesso ao sistema
         self.btn_login_entry = ctk.CTkButton(
-            self.frame_login, width=300, hover_color="#012", text="Acessar".upper(), font=("Futura Md Bt bold", 14), corner_radius=20)
+            self.frame_login, width=300, hover_color="#012", text="Acessar".upper(), font=("Futura Md Bt bold", 14), corner_radius=20, command=self.verify_login)
         self.btn_login_entry.grid(row=4, column=0, padx=10, pady=10)
 
         # Texto de cadastro ao sistema
@@ -190,8 +218,15 @@ class App(ctk.CTk, BackEnd):
         self.confirm_cadastro_entry.delete(0, END)
 
     def limpaEntryLogin(self):
-        self.username_login_entry.delete(0, END)
+        self.email_login_entry.delete(0, END)
         self.password_login_entry.delete(0, END)
+
+    def showEntrySenha(self):
+
+        if (self.checkbox_login_entry_var.get() == 1):
+            self.password_login_entry.configure(show='')
+        else:
+            self.password_login_entry.configure(show='*')
 
 
 if __name__ == '__main__':
